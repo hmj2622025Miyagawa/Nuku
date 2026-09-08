@@ -11,13 +11,14 @@ enum GameScene {
 	SCENE_GACHA // ガチャシーンの定義
 };
 
-int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow) {
+int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow) 
+{
     ChangeWindowMode(TRUE);
     SetGraphMode(SCREEN_WIDTH, SCREEN_HEIGHT, 32);
     if (DxLib_Init() == -1) return -1;
     SetDrawScreen(DX_SCREEN_BACK);
 
-    // ---- [ 変数設定 ] ----
+    // 変数設定
     GameScene currentScene = SCENE_TITLE;
 
     int kabuBaseX = 270;
@@ -37,6 +38,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     int comboCount = 0;
     int lastClickTime = 0;
     const int COMBO_LIMIT_TIME = 500;
+	const int MANDRAGORA_COMBO_LIMIT_TIME = 700;
 
     int kabuGraph = -1;
     int clearKabuX = 120;
@@ -49,12 +51,12 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	int imgMogura = -1;
 	int imgMogura_Stun = -1;
 
-	imgNormal = LoadGraph("Kabu.png");
-    imgGold = LoadGraph("Kabu_Gold.png");
-    imgDaikon = LoadGraph("Daikon.png");
-	imgMandragora = LoadGraph("Mandragora.png");
-	imgMogura = LoadGraph("Mogura.png");
-	imgMogura_Stun = LoadGraph("Mogura_Stun.png");
+	imgNormal = LoadGraph("Image/Kabu.png");
+    imgGold = LoadGraph("Image/Kabu_Gold.png");
+    imgDaikon = LoadGraph("Image/Daikon.png");
+	imgMandragora = LoadGraph("Image/Mandragora.png");
+	imgMogura = LoadGraph("Image/Mogura.png");
+	imgMogura_Stun = LoadGraph("Image/Mogura_Stun.png");
 
     if (
         imgNormal == -1 ||
@@ -74,11 +76,27 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
 	const char* gachaNameList[] = { "通常のカブ", "金のカブ", "大根", "マンドラ" };
 
+	const char* yasaiDescription[] =
+	{
+		"どこにでもある普通のカブ。",
+		"黄金に輝く超レアなカブ！",
+		"とても長くて立派な大根。",
+		"引き抜くと叫ぶという謎の野菜……。"
+	};
+
+	const char* yasaiRarity[] =
+	{
+		"★",
+		"★★★",
+		"★★",
+		"★★"
+	};
+
     unsigned int bodyC = 0;
 	unsigned int botC = 0;
 
-    int totalWalletPoints = 0;          // 所持ポイント（スコアがそのまま入ります）
-    bool hasUnlocked[4] = { true, false, false, false }; // 野菜の解放状況（最初は通常のみ）
+    int totalWalletPoints = 0;          // 所持ポイント
+    bool hasUnlocked[4] = { true, false, false, false }; // 野菜の解放状況
     int currentEquippedYasai = 0;       // 今セットされている野菜 (0:通常, 1:金, 2:大根, 3:マンドラ)
 
     int gachaResultYasai = 0;           // ガチャで当たった野菜
@@ -90,7 +108,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	bool showGachaResult = false;          // ガチャ結果を表示するかどうか
 	int gachaResultStartTime = 0;          // ガチャ結果表示開始時間
 
-    // ---- おじゃまモグラ用の変数 ----
+    // おじゃまモグラ用の変数
     bool isSign = false;
     bool isMogura = false;
 	bool isMoguraStunned = false;
@@ -99,21 +117,46 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     int moguraStartTime = 0;
     int stunEndTime = 0;
 
-    // ---- [ メインループ ] ----
+    // メインループ
     while (ProcessMessage() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0) {
         ClearDrawScreen();
 
         int nowTime = GetNowCount();
         bool isStunned = (nowTime < stunEndTime);
 
-        // 1. シーンごとの計算・入力処理
+        // シーンごとの計算入力処理
         switch (currentScene) {
         case SCENE_TITLE:
-            if (CheckHitKey(KEY_INPUT_1) == 1) {
-                // 金のカブ(1)を装備中ならパワーを1.5倍にする処理
-                basePullPower = (currentEquippedYasai == 1) ? 15 : 10;
-                limitTime = 10;
-				kabuY = 350; 
+            if (CheckHitKey(KEY_INPUT_1) == 1) 
+			{
+				// 野菜ごとの能力
+				if (currentEquippedYasai == 0)
+				{
+					// 通常のカブ
+					basePullPower = 10;
+					kabuY = 350;
+				}
+				else if (currentEquippedYasai == 1)
+				{
+					// パワー1.5倍
+					basePullPower = 15;
+					kabuY = 350;
+				}
+				else if (currentEquippedYasai == 2)
+				{
+					// 最初から少し出ている
+					basePullPower = 10;
+					kabuY = 300;
+				}
+				else if (currentEquippedYasai == 3)
+				{
+					// パワー2倍
+					basePullPower = 20;
+					kabuY = 350;
+				}
+
+				limitTime = 10;
+
 				comboCount = 0;
                 isSign = false;
 				isMogura = false;
@@ -122,10 +165,32 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 				startTime = nowTime;
                 currentScene = SCENE_MAIN;
             }
-            if (CheckHitKey(KEY_INPUT_2) == 1) {
-                basePullPower = (currentEquippedYasai == 1) ? 6 : 4;
-                limitTime = 15; 
-				kabuY = 350;
+            if (CheckHitKey(KEY_INPUT_2) == 1)
+			{
+				// 野菜ごとの能力
+				if (currentEquippedYasai == 0)
+				{
+					basePullPower = 4;
+					kabuY = 350;
+				}
+				else if (currentEquippedYasai == 1)
+				{
+					basePullPower = 6;
+					kabuY = 350;
+				}
+				else if (currentEquippedYasai == 2)
+				{
+					basePullPower = 4;
+					kabuY = 300;
+				}
+				else if (currentEquippedYasai == 3)
+				{
+					basePullPower = 8;
+					kabuY = 350;
+				}
+
+				limitTime = 15;
+
 				comboCount = 0;
                 isSign = false; 
 				isMogura = false;
@@ -135,7 +200,8 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
                 currentScene = SCENE_MAIN;
             }
             // Gキーでガチャ画面へ行く
-            if (CheckHitKey(KEY_INPUT_G) == 1) {
+            if (CheckHitKey(KEY_INPUT_G) == 1) 
+			{
                 currentScene = SCENE_GACHA;
                 WaitTimer(200);
             }
@@ -156,10 +222,21 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
             kabuX = kabuBaseX;
             isPressingMouse = false;
 
-            if (comboCount > 0 && (nowTime - lastClickTime) > COMBO_LIMIT_TIME)
-            {
-                comboCount = 0;
-            }
+			if (comboCount > 0)
+			{
+				int comboLimit = COMBO_LIMIT_TIME;
+
+				// マンドラゴラはコンボが少し途切れにくい
+				if (currentEquippedYasai == 3)
+				{
+					comboLimit = MANDRAGORA_COMBO_LIMIT_TIME;
+				}
+
+				if ((nowTime - lastClickTime) > comboLimit)
+				{
+					comboCount = 0;
+				}
+			}
 
             if (isSign && (nowTime - signStartTime) > 400)
             {
@@ -173,7 +250,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			{
 				if (isMoguraStunned)
 				{
-					// スタンしてから700ms経過したら消える
+					// スタンしてから一定時間経過したら消える
 					if (nowTime >= stunEndTime)
 					{
 						isMogura = false;
@@ -209,10 +286,17 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
                     }
                     else
                     {
-                        if (comboCount == 0 || (nowTime - lastClickTime) <= COMBO_LIMIT_TIME)
-                        {
-                            comboCount++;
-                        }
+						int comboLimit = COMBO_LIMIT_TIME;
+
+						if (currentEquippedYasai == 3)
+						{
+							comboLimit = MANDRAGORA_COMBO_LIMIT_TIME;
+						}
+
+						if (comboCount == 0 || (nowTime - lastClickTime) <= comboLimit)
+						{
+							comboCount++;
+						}
 
                         int currentPullPower = basePullPower;
                         if (comboCount >= 20)
@@ -265,15 +349,28 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
         case SCENE_GACHA:
            
-			// ガチャを回す
+			// ガチャ結果表示中
+			if (showGachaResult)
+			{
+				if (CheckHitKey(KEY_INPUT_RETURN) == 1 ||
+					CheckHitKey(KEY_INPUT_SPACE) == 1)
+				{
+					showGachaResult = false;
+					WaitTimer(300);
+				}
+
+				break;
+			}
+
+			// ガチャ演出開始
 			if (CheckHitKey(KEY_INPUT_SPACE) == 1 && !isGachaAnimation)
 			{
 				if (totalWalletPoints >= GACHA_COST)
 				{
-					// ポイントを消費
+					// ポイント消費
 					totalWalletPoints -= GACHA_COST;
 
-					// 最終結果を先に決めておく
+					// ガチャ結果を決定
 					int r = GetRand(99);
 
 					if (r < 40)
@@ -289,66 +386,95 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 					isGachaAnimation = true;
 					gachaAnimationStartTime = nowTime;
 					gachaAnimationYasai = 0;
-
-					WaitTimer(200);
 				}
 
-				// ---- ガチャ演出 ----
-				if (isGachaAnimation)
-				{
-					int elapsed = nowTime - gachaAnimationStartTime;
-
-					// 3秒間演出
-					if (elapsed < 2500)
-					{
-						// 時間によって切り替え速度を変える
-						int changeTime;
-
-						if (elapsed < 1000)
-							changeTime = 80;
-						else if (elapsed < 1800)
-							changeTime = 140;
-						else
-							changeTime = 250;
-
-						gachaAnimationYasai = (elapsed / changeTime) % 4;
-					}
-					else
-					{
-						// 演出終了 → 本当の結果
-						gachaAnimationYasai = gachaFinalYasai;
-
-						gachaResultYasai = gachaFinalYasai;
-
-						hasUnlocked[gachaResultYasai] = true;
-						currentEquippedYasai = gachaResultYasai;
-						
-						// 結果表示
-						showGachaResult = true;
-						gachaResultStartTime = GetNowCount();
-
-						WaitTimer(500);
-
-
-						isGachaAnimation = false;
-					}
-				}
+				WaitTimer(200);
 			}
 
-            // 【1〜4】キーが押されたら、解放済みのスキンを切り替える
-            if (CheckHitKey(KEY_INPUT_1) == 1 && hasUnlocked[0]) currentEquippedYasai = 0;
-            if (CheckHitKey(KEY_INPUT_2) == 1 && hasUnlocked[1]) currentEquippedYasai = 1;
-            if (CheckHitKey(KEY_INPUT_3) == 1 && hasUnlocked[2]) currentEquippedYasai = 2;
-            if (CheckHitKey(KEY_INPUT_4) == 1 && hasUnlocked[3]) currentEquippedYasai = 3;
+			// ガチャ演出更新
+			if (isGachaAnimation)
+			{
+				int elapsed = nowTime - gachaAnimationStartTime;
 
-            // 【Enter】キーでタイトルに戻る
-            if (CheckHitKey(KEY_INPUT_RETURN) == 1) {
-                currentScene = SCENE_TITLE;
-                WaitTimer(300);
-            }
-            break;
+				// 約2.5秒間演出
+				if (elapsed < 2500)
+				{
+					int changeTime;
+
+					// 最初は高速
+					if (elapsed < 1000)
+					{
+						changeTime = 80;
+					}
+					// 中盤は少し遅く
+					else if (elapsed < 1800)
+					{
+						changeTime = 140;
+					}
+					// 最後はゆっくり
+					else
+					{
+						changeTime = 250;
+					}
+
+					gachaAnimationYasai =
+						(elapsed / changeTime) % 4;
+				}
+				else
+				{
+					// ガチャ結果確定
+					gachaAnimationYasai = gachaFinalYasai;
+					gachaResultYasai = gachaFinalYasai;
+
+					hasUnlocked[gachaResultYasai] = true;
+					currentEquippedYasai = gachaResultYasai;
+
+					showGachaResult = true;
+					gachaResultStartTime = nowTime;
+
+					isGachaAnimation = false;
+				}
+
+				// 演出中は装備変更などをさせない
+				break;
+			}
+
+			// 野菜装備変更
+			if (CheckHitKey(KEY_INPUT_1) == 1 &&
+				hasUnlocked[0])
+			{
+				currentEquippedYasai = 0;
+			}
+
+			if (CheckHitKey(KEY_INPUT_2) == 1 &&
+				hasUnlocked[1])
+			{
+				currentEquippedYasai = 1;
+			}
+
+			if (CheckHitKey(KEY_INPUT_3) == 1 &&
+				hasUnlocked[2])
+			{
+				currentEquippedYasai = 2;
+			}
+
+			if (CheckHitKey(KEY_INPUT_4) == 1 &&
+				hasUnlocked[3])
+			{
+				currentEquippedYasai = 3;
+			}
+
+			// タイトルへ戻る
+			if (CheckHitKey(KEY_INPUT_RETURN) == 1)
+			{
+				currentScene = SCENE_TITLE;
+				WaitTimer(300);
+			}
+
+			break;
+
         }
-        // 2. シーンごとの描画処理
+        // シーンごとの描画処理
         switch (currentScene)
         {
         case SCENE_TITLE:
@@ -512,7 +638,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 						FALSE
 					);
 
-					// 「！！！」を表示
+					// ！！！を表示
 					DrawString(
 						250, 70,
 						"！！！",
@@ -665,170 +791,209 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
             break;
 
+		case SCENE_GACHA:
 
-        case SCENE_GACHA:
-
-			// ガチャ結果表示
+			// ガチャ結果表示中
 			if (showGachaResult)
 			{
-				// 背景を真っ暗にして見やすくする
-				DrawBox(
-					0, 0,
-					SCREEN_WIDTH, SCREEN_HEIGHT,
-					GetColor(20, 20, 30),
-					TRUE);
+				int resultElapsed = nowTime - gachaResultStartTime;
 
-				// 結果パネル
-				DrawBox(
-					70, 50,
-					570, 430,
-					GetColor(60, 40, 90),
-					TRUE);
-
-				DrawBox(
-					70, 50,
-					570, 430,
-					GetColor(255, 215, 0),
-					FALSE);
-
-				// 大きな「結果」
-				DrawString(
-					245, 80,
-					"★★ ガチャ結果 ★★",
-					GetColor(255, 215, 0));
-
-				// 出た野菜の名前
-				DrawFormatString(
-					190, 140,
-					GetColor(255, 255, 255),
-					"「%s」が出た！",
-					gachaNameList[gachaResultYasai]);
-
-				// 野菜画像
-				int resultGraph = imgNormal;
-				int resultWidth = 120;
-				int resultHeight = 150;
-
-				if (gachaResultYasai == 1)
+				if (resultElapsed < 450)
 				{
-					resultGraph = imgGold;
-				}
-				else if (gachaResultYasai == 2)
-				{
-					resultGraph = imgDaikon;
-					resultWidth = 80;
-					resultHeight = 150;
-				}
-				else if (gachaResultYasai == 3)
-				{
-					resultGraph = imgMandragora;
-				}
+					// 背景を点滅
+					if ((resultElapsed / 80) % 2 == 0)
+					{
+						DrawBox(
+							0, 0,
+							SCREEN_WIDTH, SCREEN_HEIGHT,
+							GetColor(255, 255, 255),
+							TRUE);
+					}
+					else
+					{
+						DrawBox(
+							0, 0,
+							SCREEN_WIDTH, SCREEN_HEIGHT,
+							GetColor(40, 20, 50),
+							TRUE);
+					}
 
-				DrawExtendGraph(
-					320 - resultWidth / 2,
-					190,
-					320 + resultWidth / 2,
-					190 + resultHeight,
-					resultGraph,
-					TRUE);
-
-				// レア度
-				if (gachaResultYasai == 1)
-				{
 					DrawString(
-						250, 355,
-						"★★★ 超レア！！ ★★★",
+						245, 190,
+						"ドン！！！",
 						GetColor(255, 215, 0));
-				}
-				else if (gachaResultYasai == 3)
-				{
+
 					DrawString(
-						245, 355,
-						"★★ レア！！ ★★",
-						GetColor(200, 100, 255));
+					200, 120,
+						"★   ★   ★   ★   ★",
+						GetColor(255, 255, 0));
+
+					DrawString(
+						200, 280,
+						"★   ★   ★   ★   ★",
+						GetColor(255, 255, 0));
 				}
 				else
 				{
+					// 結果画面
+
+					DrawBox(
+						0, 0,
+						SCREEN_WIDTH, SCREEN_HEIGHT,
+						GetColor(20, 20, 30),
+						TRUE);
+
+					// 結果パネル
+					DrawBox(
+						70, 50,
+						570, 430,
+						GetColor(60, 40, 90),
+						TRUE);
+
+					// 金色の枠
+					DrawBox(
+						70, 50,
+						570, 430,
+						GetColor(255, 215, 0),
+						FALSE);
+
+					// タイトル
 					DrawString(
-						270, 355,
-						"GET！！",
-						GetColor(100, 255, 100));
-				}
+						245, 80,
+						"★★ ガチャ結果 ★★",
+						GetColor(255, 215, 0));
 
-				DrawString(
-					220, 400,
-					"[Enter] または [Space] で戻る",
-					GetColor(200, 200, 200));
+					// 野菜名
+					DrawFormatString(
+						190, 140,
+						GetColor(255, 255, 255),
+						"「%s」が出た！",
+						gachaNameList[gachaResultYasai]);
 
-				// Enter または Space で結果画面を閉じる
-				if (CheckHitKey(KEY_INPUT_RETURN) == 1 ||
-					CheckHitKey(KEY_INPUT_SPACE) == 1)
-				{
-					showGachaResult = false;
-					WaitTimer(200);
+					// 野菜画像
+					int resultGraph = imgNormal;
+					int resultWidth = 120;
+					int resultHeight = 150;
+
+					if (gachaResultYasai == 1)
+					{
+						resultGraph = imgGold;
+					}
+					else if (gachaResultYasai == 2)
+					{
+						resultGraph = imgDaikon;
+						resultWidth = 80;
+						resultHeight = 150;
+					}
+					else if (gachaResultYasai == 3)
+					{
+						resultGraph = imgMandragora;
+					}
+
+					DrawExtendGraph(
+						320 - resultWidth / 2,
+						190,
+						320 + resultWidth / 2,
+						190 + resultHeight,
+						resultGraph,
+						TRUE);
+
+					// レア度
+					if (gachaResultYasai == 1)
+					{
+						DrawString(
+							250, 355,
+							"★★★ 超レア！！ ★★★",
+							GetColor(255, 215, 0));
+					}
+					else if (gachaResultYasai == 2)
+					{
+						DrawString(
+							270, 355,
+							"★★ レア！！ ★★",
+							GetColor(255, 180, 80));
+					}
+					else if (gachaResultYasai == 3)
+					{
+						DrawString(
+							245, 355,
+							"★★ レア！！ ★★",
+							GetColor(200, 100, 255));
+					}
+					else
+					{
+						DrawString(
+							270, 355,
+							"★ GET！！ ★",
+							GetColor(100, 255, 100));
+					}
+
+					DrawString(
+						220, 400,
+						"[Enter] または [Space] で戻る",
+						GetColor(200, 200, 200));
 				}
 
 				break;
 			}
 
-            DrawString(
-                200, 50,
-                "=== ガチャ＆ショップ（図鑑） ===",
-                GetColor(255, 215, 0));
-
-            DrawFormatString(
-                200, 90,
-                GetColor(255, 255, 255),
-                "あなたの所持ポイント: %d pt",
-                totalWalletPoints);
-
-            DrawFormatString(
-                200, 120,
-                GetColor(255, 165, 0),
-                "【Space】キーでガチャを回す (1回 %d pt)",
-                GACHA_COST);
-
+			// ガチャ演出中
 			if (isGachaAnimation)
 			{
-				// 画面全体を暗くする
+				int elapsed =
+					nowTime - gachaAnimationStartTime;
+
+				// 暗い背景
 				DrawBox(
 					0, 0,
 					SCREEN_WIDTH, SCREEN_HEIGHT,
-					GetColor(20, 20, 30),
-					TRUE
-				);
+					GetColor(15, 10, 25),
+					TRUE);
 
-				// ガチャ演出の枠
+				// 大きなパネル
 				DrawBox(
-					80, 60,
-					560, 440,
-					GetColor(80, 50, 120),
-					TRUE
-				);
+					60, 40,
+					580, 440,
+					GetColor(50, 30, 80),
+					TRUE);
 
-				// 枠線
+				// 金色の枠
 				DrawBox(
-					80, 60,
-					560, 440,
+					60, 40,
+					580, 440,
 					GetColor(255, 215, 0),
-					FALSE
-				);
+					FALSE);
 
+				// タイトル
 				DrawString(
-					220, 90,
+					220, 70,
 					"★★ ガチャ中！！ ★★",
-					GetColor(255, 215, 0)
-				);
+					GetColor(255, 215, 0));
 
-				// 野菜の名前
-				DrawFormatString(
-					220, 150,
-					GetColor(255, 255, 255),
-					"？？？ %s ？？？",
-					gachaNameList[gachaAnimationYasai]
-				);
+				// ？？？表示
+				if (elapsed < 700)
+				{
+					DrawString(
+						235, 135,
+						"？？？？？？",
+						GetColor(255, 255, 255));
+				}
+				else if (elapsed < 1800)
+				{
+					DrawString(
+						220, 135,
+						"？？？！？！？",
+						GetColor(255, 255, 0));
+				}
+				else
+				{
+					DrawString(
+						205, 135,
+						"まもなく確定！！",
+						GetColor(255, 100, 100));
+				}
 
-				// 画像
+				// 野菜画像
 				int graph = imgNormal;
 				int width = 100;
 				int height = 130;
@@ -848,82 +1013,156 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 					graph = imgMandragora;
 				}
 
+				// 最後だけ少し大きくする
+				int scaleUp = 0;
+
+				if (elapsed > 1800)
+				{
+					scaleUp = ((elapsed / 80) % 2) * 8;
+				}
+
 				DrawExtendGraph(
-					320 - width / 2,
-					190,
-					320 + width / 2,
-					190 + height,
+					320 - (width + scaleUp) / 2,
+					190 - scaleUp / 2,
+					320 + (width + scaleUp) / 2,
+					190 + height + scaleUp / 2,
 					graph,
-					TRUE
-				);
+					TRUE);
 
-				DrawString(
-					220, 370,
-					"何が出るかな・・・！？",
-					GetColor(255, 255, 255)
-				);
+				// 回転中っぽい演出
+				if (elapsed < 1800)
+				{
+					DrawString(
+						180, 365,
+						"・・・・・・",
+						GetColor(255, 255, 255));
 
-				// 演出中はここで終了
+					DrawString(
+						220, 395,
+						"何かが出る！！！",
+						GetColor(255, 100, 100));
+				}
+
 				break;
 			}
 
-            DrawString(
-                120, 180,
-                "--- 所有スキン（数字キーを押して装備変更） ---",
-                GetColor(200, 200, 200));
+			// ガチャ・図鑑画面
 
-            DrawFormatString(
-                120, 210,
-                hasUnlocked[0]
-                ? GetColor(255, 255, 255)
-                : GetColor(80, 80, 80),
-                "【1】 ふつうのカブ : %s",
-                hasUnlocked[0]
-                ? "解放済み"
-                : "未解放");
+			// 背景
+			DrawBox(
+				0, 0,
+				SCREEN_WIDTH, SCREEN_HEIGHT,
+				GetColor(20, 20, 30),
+				TRUE);
 
-            DrawFormatString(
-                120, 240,
-                hasUnlocked[1]
-                ? GetColor(255, 215, 0)
-                : GetColor(80, 80, 80),
-                "【2】 金のカブ     : %s",
-                hasUnlocked[1]
-                ? "解放済み (パワー1.5倍!)"
-                : "未解放 [激レア]");
+			// タイトル
+			DrawString(
+				100, 40,
+				"★★ ガチャ・野菜図鑑 ★★",
+				GetColor(255, 215, 0));
 
-            DrawFormatString(
-                120, 270,
-                hasUnlocked[2]
-                ? GetColor(150, 255, 150)
-                : GetColor(80, 80, 80),
-                "【3】 大根         : %s",
-                hasUnlocked[2]
-                ? "解放済み"
-                : "未解放");
+			// 所持ポイント
+			DrawFormatString(
+				400, 45,
+				GetColor(255, 255, 255),
+				"所持ポイント: %d pt",
+				totalWalletPoints);
 
-            DrawFormatString(
-                120, 300,
-                hasUnlocked[3]
-                ? GetColor(147, 112, 219)
-                : GetColor(80, 80, 80),
-                "【4】 マンドラゴラ : %s",
-                hasUnlocked[3]
-                ? "解放済み"
-                : "未解放");
+			// ガチャ案内
+			DrawString(
+				160, 90,
+				"[Space] ガチャを回す！",
+				GetColor(255, 255, 0));
 
-            DrawString(
-                80,
-                210 + (currentEquippedYasai * 30),
-                "->",
-                GetColor(255, 255, 0));
+			DrawFormatString(
+				230, 120,
+				GetColor(255, 180, 180),
+				"1回 %d pt",
+				GACHA_COST);
 
-            DrawString(
-                200, 380,
-                "[Enter] キーでタイトルに戻る",
-                GetColor(200, 200, 200));
+			// 図鑑
+			DrawString(
+				120, 180,
+				"========== 野菜図鑑 ==========",
+				GetColor(255, 215, 0));
 
-            break;
+			// 発見数
+			int discoveredCount = 0;
+
+			for (int i = 0; i < 4; i++)
+			{
+				if (hasUnlocked[i])
+				{
+					discoveredCount++;
+				}
+			}
+
+			DrawFormatString(
+				430, 180,
+				GetColor(255, 255, 255),
+				"%d / 4 発見",
+				discoveredCount);
+
+			// 野菜4種類
+			for (int i = 0; i < 4; i++)
+			{
+				int y = 215 + i * 55;
+
+				if (hasUnlocked[i])
+				{
+					DrawFormatString(
+						100, y,
+						GetColor(255, 215, 0),
+						"[%d] %s",
+						i + 1,
+						gachaNameList[i]);
+
+					DrawFormatString(
+						260, y,
+						GetColor(255, 255, 255),
+						"%s",
+						yasaiRarity[i]);
+
+					DrawString(
+						100, y + 20,
+						yasaiDescription[i],
+						GetColor(180, 220, 180));
+
+					if (currentEquippedYasai == i)
+					{
+						DrawString(
+							450, y,
+							"< 装備中 >",
+							GetColor(255, 255, 0));
+					}
+				}
+				else
+				{
+					DrawFormatString(
+						100, y,
+						GetColor(80, 80, 80),
+						"[%d] ？？？？？？",
+						i + 1);
+
+					DrawString(
+						100, y + 20,
+						"まだ見つけていない……",
+						GetColor(80, 80, 80));
+				}
+			}
+
+			DrawString(
+				80, 440,
+				"[1～4] 発見済みの野菜を装備",
+				GetColor(200, 200, 200));
+
+			DrawString(
+				380, 440,
+				"[Enter] キーでタイトルに戻る",
+				GetColor(200, 200, 200));
+
+			break;
+			
         }
 
         ScreenFlip();
