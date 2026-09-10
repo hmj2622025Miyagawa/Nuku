@@ -19,6 +19,11 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     SetDrawScreen(DX_SCREEN_BACK);
 
     // 変数設定
+
+	int currentStage = 1;
+	const int MAX_STAGE = 3;
+	int selectedMode = 1;
+
     GameScene currentScene = SCENE_TITLE;
 
     int kabuBaseX = 270;
@@ -84,6 +89,14 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		"引き抜くと叫ぶという謎の野菜……。"
 	};
 
+	const char* yasaiAbiity[] =
+	{
+		"通常のカブ。引き抜きパワーは普通。",
+		"金のカブ。　引き抜きパワーが1.5倍になる。",
+		"大根。　最初から少し出ているので引き抜きやすい。",
+		"マンドラ。　引き抜きパワーが2倍になる、コンボが続きやすい"
+	};
+
 	const char* yasaiRarity[] =
 	{
 		"★",
@@ -129,6 +142,9 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
         case SCENE_TITLE:
             if (CheckHitKey(KEY_INPUT_1) == 1) 
 			{
+				selectedMode = 1;
+				currentStage = 1;
+
 				// 野菜ごとの能力
 				if (currentEquippedYasai == 0)
 				{
@@ -155,7 +171,25 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 					kabuY = 350;
 				}
 
-				limitTime = 10;
+				// ステージごとの制限時間
+				if (selectedMode == 1)
+				{
+					if (currentStage == 1)
+						limitTime = 10;
+					else if (currentStage == 2)
+						limitTime = 8;
+					else
+						limitTime = 6;
+				}
+				else
+				{
+					if (currentStage == 1)
+						limitTime = 15;
+					else if (currentStage == 2)
+						limitTime = 12;
+					else
+						limitTime = 9;
+				}
 
 				comboCount = 0;
                 isSign = false;
@@ -167,6 +201,9 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
             }
             if (CheckHitKey(KEY_INPUT_2) == 1)
 			{
+				selectedMode = 2;
+				currentStage = 1;
+
 				// 野菜ごとの能力
 				if (currentEquippedYasai == 0)
 				{
@@ -329,7 +366,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
             if (kabuY <= targetY)
             {
-                score = remainingTime * 1000 + (comboCount * 50);
+                score = remainingTime * 300 + (comboCount * 20);
 
                 // スコアを所持ポイントに加算
                 totalWalletPoints += score;
@@ -338,14 +375,76 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
             }
             break;
         }
-        case SCENE_CLEAR:
-        case SCENE_GAMEOVER:
-            if (CheckHitKey(KEY_INPUT_RETURN) == 1)
-            {
-                currentScene = SCENE_TITLE;
-                WaitTimer(300);
-            }
-            break;
+		
+		case SCENE_CLEAR:
+
+			if (CheckHitKey(KEY_INPUT_RETURN) == 1)
+			{
+				if (currentStage < MAX_STAGE)
+				{
+					// 次のステージへ
+					currentStage++;
+
+					comboCount = 0;
+					isSign = false;
+					isMogura = false;
+					isMoguraStunned = false;
+					stunEndTime = 0;
+
+					// ステージごとの制限時間
+					if (selectedMode == 1)
+					{
+						if (currentStage == 1)
+							limitTime = 10;
+						else if (currentStage == 2)
+							limitTime = 8;
+						else
+							limitTime = 6;
+					}
+					else
+					{
+						if (currentStage == 1)
+							limitTime = 15;
+						else if (currentStage == 2)
+							limitTime = 12;
+						else
+							limitTime = 9;
+					}
+
+					// 野菜の初期位置
+					if (currentEquippedYasai == 2)
+						kabuY = 300;
+					else
+						kabuY = 350;
+
+					startTime = nowTime;
+					currentScene = SCENE_MAIN;
+				}
+				else
+				{
+					// ステージ3クリア → タイトルへ
+					currentStage = 1;
+					currentScene = SCENE_TITLE;
+				}
+
+				WaitTimer(300);
+			}
+
+			break;
+
+
+		case SCENE_GAMEOVER:
+
+			if (CheckHitKey(KEY_INPUT_RETURN) == 1)
+			{
+				// ゲームオーバーならステージ1から
+				currentStage = 1;
+				currentScene = SCENE_TITLE;
+
+				WaitTimer(300);
+			}
+
+			break;
 
         case SCENE_GACHA:
            
@@ -610,6 +709,12 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
                 "残り時間: %d 秒",
                 remainingTime);
 
+			DrawFormatString(
+				500, 20,
+				GetColor(255, 215, 0),
+				"STAGE % d",
+				currentStage);
+
             DrawString(
                 20, 50,
                 "【左クリック】を連打して引っ張れ！！！",
@@ -750,6 +855,13 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
                 "★★ CLEAR !! ★★",
                 GetColor(255, 215, 0));
 
+			DrawFormatString(
+				340, 190,
+				GetColor(255, 255, 0),
+				"STAGE %d クリア！",
+				currentStage
+			);
+
             DrawFormatString(
                 340, 220,
                 GetColor(255, 255, 255),
@@ -762,10 +874,21 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
                 "最高コンボ: %d COMBO",
                 comboCount);
 
-            DrawString(
-                340, 320,
-                "[Enter] キーでタイトルへ",
-                GetColor(200, 200, 200));
+			if (currentStage < MAX_STAGE)
+			{
+				DrawString(
+					200, 400,
+					"[Enter] キーで次のステージへ",
+					GetColor(255, 255, 255));
+			}
+			else
+			{
+				DrawString(
+					200, 400,
+					"[Enter] キーでタイトルへ",
+					GetColor(255, 255, 255));
+			}
+
 
             break;
         }
@@ -1127,6 +1250,11 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 						100, y + 20,
 						yasaiDescription[i],
 						GetColor(180, 220, 180));
+
+					DrawString(
+						100, y + 35,
+						yasaiAbiity[i],
+						GetColor(255, 180, 100));
 
 					if (currentEquippedYasai == i)
 					{
