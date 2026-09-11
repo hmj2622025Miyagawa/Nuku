@@ -43,7 +43,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     int comboCount = 0;
     int lastClickTime = 0;
     const int COMBO_LIMIT_TIME = 500;
-	const int MANDRAGORA_COMBO_LIMIT_TIME = 700;
+	const int MANDRAGORA_COMBO_LIMIT_TIME = 1700;
 
     int kabuGraph = -1;
     int clearKabuX = 120;
@@ -92,9 +92,9 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	const char* yasaiAbiity[] =
 	{
 		"通常のカブ。引き抜きパワーは普通。",
-		"金のカブ。　引き抜きパワーが1.5倍になる。",
+		"金のカブ。　引き抜きパワーが2倍になる。",
 		"大根。　最初から少し出ているので引き抜きやすい。",
-		"マンドラ。　引き抜きパワーが2倍になる、コンボが続きやすい"
+		"マンドラ。　コンボが続きやすい"
 	};
 
 	const char* yasaiRarity[] =
@@ -154,8 +154,8 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 				}
 				else if (currentEquippedYasai == 1)
 				{
-					// パワー1.5倍
-					basePullPower = 15;
+					// パワー2倍
+					basePullPower = 20;
 					kabuY = 350;
 				}
 				else if (currentEquippedYasai == 2)
@@ -166,8 +166,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 				}
 				else if (currentEquippedYasai == 3)
 				{
-					// パワー2倍
-					basePullPower = 20;
+					basePullPower = 10;
 					kabuY = 350;
 				}
 
@@ -212,7 +211,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 				}
 				else if (currentEquippedYasai == 1)
 				{
-					basePullPower = 6;
+					basePullPower = 8;
 					kabuY = 350;
 				}
 				else if (currentEquippedYasai == 2)
@@ -222,7 +221,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 				}
 				else if (currentEquippedYasai == 3)
 				{
-					basePullPower = 8;
+					basePullPower = 4;
 					kabuY = 350;
 				}
 
@@ -366,7 +365,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
             if (kabuY <= targetY)
             {
-                score = remainingTime * 300 + (comboCount * 20);
+                score = remainingTime * 1000 + (comboCount * 50);
 
                 // スコアを所持ポイントに加算
                 totalWalletPoints += score;
